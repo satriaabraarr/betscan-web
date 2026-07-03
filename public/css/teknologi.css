@@ -1,0 +1,102 @@
+/* ============================================================
+   TEKNOLOGI
+============================================================ */
+#teknologi {
+    background: linear-gradient(160deg, var(--blue-800) 0%, var(--blue-500) 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+#teknologi::before {
+    content: '';
+    position: absolute;
+    width: 700px; height: 700px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(96,165,250,.12) 0%, transparent 65%);
+    top: -200px; right: -200px;
+    pointer-events: none;
+}
+
+.teknologi-header { text-align: center; margin-bottom: 3.5rem; position: relative; z-index: 1; }
+.teknologi-header .section-title { color: #fff; }
+.teknologi-header .section-title .highlight { color: var(--blue-400) }
+.teknologi-header .section-desc  { color: rgba(255,255,255,.65); margin: 0 auto; }
+.teknologi-header .section-eyebrow {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.15);
+    color: var(--blue-200);
+}
+.teknologi-header .section-eyebrow-dot { background: var(--blue-300); }
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.tech-card {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    backdrop-filter: blur(12px);
+    transition: all .3s;
+}
+.tech-card:hover {
+    background: rgba(255,255,255,.10);
+    border-color: rgba(255,255,255,.2);
+    transform: translateY(-4px);
+}
+
+.tech-card-icon {
+    width: 48px; height: 48px;
+    border-radius: var(--radius-md);
+    background: rgba(96,165,250,.2);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1.1rem;
+    color: var(--blue-200);
+}
+.tech-card-icon svg { width: 24px; height: 24px; }
+
+.tech-card-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem; font-weight: 600;
+    color: #fff; margin-bottom: .4rem;
+}
+.tech-card-desc {
+    font-size: .88rem;
+    color: rgba(255,255,255,.60);
+    line-height: 1.6; margin-bottom: 1rem;
+}
+
+.tech-badge {
+    display: inline-block;
+    padding: .22rem .7rem;
+    background: rgba(96,165,250,.25);
+    border-radius: var(--radius-full);
+    font-size: .73rem; font-weight: 700;
+    color: var(--blue-200); letter-spacing: .04em;
+}
+
+.accuracy-bar { margin-top: .75rem; }
+.accuracy-label {
+    display: flex; justify-content: space-between;
+    font-size: .73rem; color: rgba(255,255,255,.5);
+    margin-bottom: .4rem;
+}
+.accuracy-label span:last-child { color: var(--blue-300); font-weight: 700; }
+.accuracy-track {
+    height: 5px;
+    background: rgba(255,255,255,.1);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+.accuracy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue-400), var(--blue-300));
+    border-radius: var(--radius-full);
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+    width: 0;
+}
