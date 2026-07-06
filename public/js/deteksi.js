@@ -361,7 +361,7 @@ document.getElementById('detectionForm').addEventListener('submit', async functi
         const formData = new FormData(this);
 
         // Hapus input_images[] bawaan (mungkin kosong karena sudah sync)
-        // lalu tambah ulang dari selectedFiles
+        // Lalu tambah ulang dari selectedFiles
         formData.delete('input_images[]');
         selectedFiles.forEach(file => {
             formData.append('input_images[]', file, file.name);
