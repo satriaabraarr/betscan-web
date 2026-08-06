@@ -57,6 +57,6 @@
 </section>
 
 <script>
-    const DETECT_URL = '{{ route("detect") }}';
-</script>
+    const DETECT_URL       = '{{ route("detect") }}';
+    const FACE_PREDICT_URL = '{{ route("face.predict") }}';</script>
 <script src="{{ asset('js/deteksi.js') }}"></script>

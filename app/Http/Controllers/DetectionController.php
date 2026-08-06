@@ -21,15 +21,58 @@ class DetectionController extends Controller
     }
 
     // =========================================================
+    // Proxy: Face Recognition (selfie → Flask → Laravel → JS)
+    // =========================================================
+    public function facePredict(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:png,jpg,jpeg|max:5120',
+        ]);
+
+        try {
+            $imageFile = $request->file('image');
+
+            $response = Http::timeout(30)
+                ->attach(
+                    'image',
+                    file_get_contents($imageFile->getRealPath()),
+                    $imageFile->getClientOriginalName() ?: 'selfie.jpg',
+                    ['Content-Type' => $imageFile->getMimeType()]
+                )
+                ->post(self::PYTHON_API . '/face/predict');
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            Log::warning('Face API response tidak sukses', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Face recognition service error.',
+            ], 502);
+
+        } catch (\Exception $e) {
+            Log::error('Gagal memanggil Face API', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to connect to face recognition service.',
+            ], 503);
+        }
+    }
+
+    // =========================================================
     // Proses Deteksi
     // =========================================================
     public function detect(Request $request)
     {
         $request->validate([
-            // user_age dihapus — profil pengguna kini hanya menggunakan kategori
             'user_category'   => 'required|in:Pelajar/Mahasiswa,Pekerja',
             'input_text'      => 'nullable|string|max:50000',
-            // Validasi array gambar: tiap file maks 5MB, format PNG/JPG
             'input_images'    => 'nullable|array|max:10',
             'input_images.*'  => 'image|mimes:png,jpg,jpeg|max:5120',
         ]);
@@ -64,10 +107,10 @@ class DetectionController extends Controller
         // =========================================================
         // Panggil Model ML
         // =========================================================
-        $nlpResult      = 'not_run';
-        $cnnResult      = 'not_run';
-        $nlpDetail      = [];
-        $cnnImageResults = [];   // hasil per-gambar dari CNN
+        $nlpResult       = 'not_run';
+        $cnnResult       = 'not_run';
+        $nlpDetail       = [];
+        $cnnImageResults = [];
 
         if ($hasText) {
             $nlpRaw    = $this->callNlpModel($request->input('input_text'));
@@ -83,12 +126,11 @@ class DetectionController extends Controller
 
         // =========================================================
         // Evaluasi Hasil Deteksi
-        // Konten dianggap mengandung judi jika minimal satu model (NLP/CNN) positif
+        // Konten dianggap mengandung judi jika minimal satu model positif
         // =========================================================
         $contentDetected = ($nlpResult === 'judi') || ($cnnResult === 'judi');
 
-        // Kedua jalur (konten terdeteksi judi maupun konten aman) tetap melalui
-        // tahap Kategorisasi Pengguna -> Kategorisasi Konten -> CBF / Matriks Keputusan.
+        // Kategorisasi Pengguna → Kategorisasi Konten → Matriks Keputusan CBF
         $userVulnerability = $this->categorizeUser($request->user_category);
         $contentRiskLevel  = $this->categorizeContent($contentDetected);
         $recommendation    = $this->applyDecisionMatrix($contentRiskLevel, $userVulnerability);
@@ -123,7 +165,7 @@ class DetectionController extends Controller
                 'nlp_result'          => $nlpResult,
                 'nlp_detail'          => $nlpDetail,
                 'cnn_result'          => $cnnResult,
-                'cnn_image_results'   => $cnnImageResults,  // per-gambar
+                'cnn_image_results'   => $cnnImageResults,
                 'input_type'          => $inputType,
                 'education'           => $this->getEducationText(
                     $recommendation, $userVulnerability, $request->user_category
@@ -174,12 +216,11 @@ class DetectionController extends Controller
     private function callCnnModel(array $imageFiles): array
     {
         try {
-            // Buat HTTP request dengan multiple file attachment
             $http = Http::timeout(120);
 
             foreach ($imageFiles as $idx => $imageFile) {
                 $http = $http->attach(
-                    'images[]',                              // ← field name array
+                    'images[]',
                     file_get_contents($imageFile->getRealPath()),
                     $imageFile->getClientOriginalName() ?: "image_{$idx}.jpg",
                     ['Content-Type' => $imageFile->getMimeType()]
@@ -189,19 +230,19 @@ class DetectionController extends Controller
             $response = $http->post(self::PYTHON_API . '/cnn/predict');
 
             if ($response->successful()) {
-                $json           = $response->json();
-                $overallResult  = $json['overall_result'] ?? 'non_judi';
-                $overallResult  = in_array($overallResult, ['judi', 'non_judi']) ? $overallResult : 'non_judi';
+                $json          = $response->json();
+                $overallResult = $json['overall_result'] ?? 'non_judi';
+                $overallResult = in_array($overallResult, ['judi', 'non_judi']) ? $overallResult : 'non_judi';
 
                 Log::info('CNN predict berhasil', [
-                    'overall'     => $overallResult,
-                    'judi_count'  => $json['judi_count'] ?? 0,
-                    'total'       => $json['total_images'] ?? 0,
+                    'overall'    => $overallResult,
+                    'judi_count' => $json['judi_count']    ?? 0,
+                    'total'      => $json['total_images']  ?? 0,
                 ]);
 
                 return [
                     'overall_result' => $overallResult,
-                    'judi_count'     => $json['judi_count']  ?? 0,
+                    'judi_count'     => $json['judi_count']   ?? 0,
                     'total_images'   => $json['total_images'] ?? 0,
                     'results'        => $json['results']      ?? [],
                 ];
@@ -229,8 +270,8 @@ class DetectionController extends Controller
     // =========================================================
 
     /**
-     * Kategorisasi tingkat kerentanan pengguna langsung berdasarkan kategori:
-     * Pelajar/Mahasiswa -> TINGGI, Pekerja -> RENDAH
+     * Kategorisasi kerentanan pengguna berdasarkan kategori:
+     * Pelajar/Mahasiswa → TINGGI, Pekerja → RENDAH
      */
     private function categorizeUser(string $category): string
     {
@@ -242,11 +283,18 @@ class DetectionController extends Controller
     }
 
     /**
-     * Matriks Keputusan Content-Based Filtering.
-     * Mencocokkan content_risk_level dengan user_vulnerability:
-     * - KONTEN_AMAN                         -> AMAN (berlaku untuk semua tingkat kerentanan)
-     * - KONTEN_BERISIKO + TINGGI (Pelajar/Mahasiswa) -> BLOKIR
-     * - KONTEN_BERISIKO + RENDAH (Pekerja)           -> BERI_PERINGATAN
+     * Kategorisasi level risiko konten berdasarkan status deteksi.
+     */
+    private function categorizeContent(bool $contentDetected): string
+    {
+        return $contentDetected ? 'KONTEN_BERISIKO' : 'KONTEN_AMAN';
+    }
+
+    /**
+     * Matriks Keputusan CBF:
+     * KONTEN_AMAN                           → AMAN
+     * KONTEN_BERISIKO + TINGGI (Pelajar/Mahasiswa) → BLOKIR
+     * KONTEN_BERISIKO + RENDAH (Pekerja)           → BERI_PERINGATAN
      */
     private function applyDecisionMatrix(string $contentRiskLevel, string $userVulnerability): string
     {
@@ -254,18 +302,7 @@ class DetectionController extends Controller
             return 'AMAN';
         }
 
-        if ($userVulnerability === 'TINGGI') {
-            return 'BLOKIR';
-        }
-        return 'BERI_PERINGATAN';
-    }
-
-    /**
-     * Label level risiko konten untuk tampilan, diturunkan dari status deteksi.
-     */
-    private function categorizeContent(bool $contentDetected): string
-    {
-        return $contentDetected ? 'KONTEN_BERISIKO' : 'KONTEN_AMAN';
+        return $userVulnerability === 'TINGGI' ? 'BLOKIR' : 'BERI_PERINGATAN';
     }
 
     private function getEducationText(string $rec, string $vuln, string $cat): string
@@ -293,10 +330,10 @@ class DetectionController extends Controller
     private function getRecommendationLabel(string $rec): array
     {
         if ($rec === 'BLOKIR') {
-            return ['label' => 'Block Content',  'level' => 'Immediate Action',   'color' => 'danger',  'icon' => 'shield-x'];
+            return ['label' => 'Block Content', 'level' => 'Immediate Action', 'color' => 'danger',  'icon' => 'shield-x'];
         }
         if ($rec === 'BERI_PERINGATAN') {
-            return ['label' => 'Give Warning',   'level' => 'Caution Advised', 'color' => 'warning', 'icon' => 'alert-triangle'];
+            return ['label' => 'Give Warning',  'level' => 'Caution Advised',  'color' => 'warning', 'icon' => 'alert-triangle'];
         }
         return ['label' => 'Safe Content', 'level' => 'No Action Needed', 'color' => 'success', 'icon' => 'shield-check'];
     }

@@ -596,10 +596,10 @@
 
 .hasil-scores {
     display: grid;
-    grid-template-columns: repeat(2,1fr);
+    grid-template-columns: repeat(3,1fr);
     gap: 1rem; margin-bottom: 1.5rem;
 }
-@media (max-width: 560px) { .hasil-scores { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .hasil-scores { grid-template-columns: 1fr 1fr; } }
 
 .score-box {
     background: var(--slate-50);
@@ -660,4 +660,225 @@
     .form-card { padding: 1.25rem; }
     .hasil-body { padding: 1.25rem; }
     .hasil-banner { padding: 1.25rem; }
+}
+
+/* ============================================================
+   FACE RECOGNITION — Camera UI
+============================================================ */
+
+/* STATE 1: Idle */
+.face-idle-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2rem 1.5rem; text-align: center;
+}
+.face-idle-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-blue);
+}
+.face-idle-icon svg { width: 34px; height: 34px; }
+.face-idle-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--slate-800); margin-bottom: .4rem;
+}
+.face-idle-sub {
+    font-size: .82rem; color: var(--slate-400);
+    max-width: 320px; line-height: 1.55; margin-bottom: 1.5rem;
+}
+.btn-open-camera {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: .7rem 1.5rem;
+    background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+    color: #fff; 
+    border: 1.5px solid transparent; 
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: .9rem; font-weight: 700; line-height: 1.2;
+    cursor: pointer; transition: all .2s;
+    box-shadow: var(--shadow-blue);
+}
+.btn-open-camera:hover {
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+    transform: translateY(-1px);
+}
+.btn-open-camera svg { width: 18px; height: 18px; }
+
+/* Divider antara Open Camera dan Upload Photo */
+.face-idle-divider {
+    display: flex; align-items: center; gap: .6rem;
+    width: 100%; max-width: 280px;
+    color: var(--slate-300); font-size: .75rem;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .1em;
+    margin: .75rem 0;
+}
+.face-idle-divider::before, .face-idle-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--slate-200);
+}
+
+/* Upload photo button */
+.btn-upload-photo {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: .7rem 1.5rem;
+    background: #fff; color: var(--slate-600);
+    border: 1.5px solid var(--slate-300);
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: .9rem; font-weight: 700; line-height: 1.2;
+    cursor: pointer; transition: all .2s;
+}
+.btn-upload-photo:hover {
+    border-color: var(--blue-400);
+    color: var(--blue-600);
+    background: var(--blue-50);
+}
+.btn-upload-photo svg { width: 18px; height: 18px; }
+
+/* STATE 2: Camera live */
+.face-camera-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1.5rem;
+}
+.face-video-wrap {
+    position: relative;
+    width: 100%; max-width: 400px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 4/3;
+}
+.face-video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transform: scaleX(-1);
+}
+.face-video-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+}
+.face-guide-circle {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    border: 3px dashed rgba(255,255,255,.7);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,.35);
+    animation: guidePulse 2s ease-in-out infinite;
+}
+@keyframes guidePulse {
+    0%, 100% { border-color: rgba(255,255,255,.7); }
+    50%       { border-color: rgba(99,179,237,.9); }
+}
+.face-camera-hint {
+    font-size: .8rem; color: var(--slate-400);
+    text-align: center; margin: .9rem 0 1rem;
+}
+.face-camera-actions {
+    display: flex; align-items: center; gap: .75rem;
+    flex-wrap: wrap; justify-content: center;
+}
+.btn-capture {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: .75rem 1.75rem;
+    background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+    color: #fff; border: none; border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: .95rem; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+    box-shadow: var(--shadow-blue);
+}
+.btn-capture:hover {
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+    transform: translateY(-1px);
+}
+.btn-capture svg { width: 18px; height: 18px; }
+.btn-cancel-camera {
+    padding: .75rem 1.25rem;
+    background: var(--slate-100); color: var(--slate-600);
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: .9rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+}
+.btn-cancel-camera:hover { background: var(--slate-200); }
+
+/* STATE 3: Loading */
+.face-loading-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 3rem 1.5rem; gap: 1rem;
+}
+.face-loading-spinner {
+    width: 44px; height: 44px;
+    border: 3.5px solid var(--blue-100);
+    border-top-color: var(--blue-500);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+}
+.face-loading-text { font-size: .9rem; font-weight: 600; color: var(--slate-500); }
+
+/* STATE 4: Result */
+.face-result-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1.5rem; gap: 1rem;
+}
+.face-captured-img {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--blue-400);
+    box-shadow: 0 0 0 4px var(--blue-50);
+}
+.face-captured-img.mirrored { transform: scaleX(-1); }
+.face-result-info {
+    display: flex; flex-direction: column; align-items: center;
+    gap: .4rem; text-align: center;
+}
+.face-result-category {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: .5rem 1.1rem;
+    border-radius: var(--radius-full);
+    font-size: .88rem; font-weight: 700; border: 1.5px solid;
+}
+.face-badge-student { background: var(--blue-50);  color: var(--blue-700);  border-color: var(--blue-200); }
+.face-badge-worker  { background: var(--blue-50);  color: var(--blue-700);  border-color: var(--blue-200); }
+.face-result-category svg { width: 16px; height: 16px; }
+.face-result-conf { font-size: .78rem; color: var(--slate-400); }
+.btn-retake {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: .55rem 1.2rem;
+    background: var(--slate-100); color: var(--slate-600);
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: .82rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+}
+.btn-retake:hover { background: var(--slate-200); }
+.btn-retake svg { width: 15px; height: 15px; }
+
+/* STATE 5: Error */
+.face-error-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2rem 1.5rem; text-align: center; gap: .75rem;
+}
+.face-error-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--red-500);
+}
+.face-error-icon svg { width: 26px; height: 26px; }
+.face-error-msg {
+    font-size: .86rem; color: var(--slate-600);
+    max-width: 300px; line-height: 1.55;
+}
+.face-error-actions {
+    display: flex; align-items: center; gap: .75rem;
+    flex-wrap: wrap; justify-content: center;
+    margin-top: .25rem;
 }
